@@ -1,24 +1,29 @@
+%%
+clear;
+clc;
+close all;
 %% Reading Video and taking time stamps
-
-% Ensure that folder containing mmread.m is in matlab path. Replace file
-% path with the path of your cars.avi file
-
-file_path = '../data/cars.avi';
+file_path = '../data/cars.mp4';
 
 % Uncomment the below line to read video.
-video = mmread(file_path,[],[],false,true); %read all frames, disable audio
+% video = mmread(file_path,[],[],false,true); %read all frames, disable audio
+v = VideoReader(file_path);
 
+video = read(v,[1 10]);
+
+%%
 %movie(video.frames)
 
-T_array = [3 5 7];
+% T_array = [3 5 7];
+T_array = [3];
 
 for T = T_array
     
-    frames_struct = (video.frames(1:T));
-    frames = zeros(288,352,T);
-    for i = 1 : T
-       frames(:,:,i) = rgb2gray(frames_struct(i).cdata);
-    end
+    frames = squeeze(mean((video(:,:,:,1:T)),3));
+%     frames = zeros(288,360,T);
+%     for i = 1 : T
+%        frames(:,:,i) = rgb2gray(frames_struct(i).cdata);
+%     end
     X_base = 150;
     Y_base = 100;
     height = 120;
