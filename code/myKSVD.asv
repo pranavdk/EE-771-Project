@@ -1,6 +1,6 @@
 %% Implementation of K-SVD algorithm
 
-function [final_basis,sparse_repr] = myKSVD(current_basis,data,max_iter,omp_iter)
+function [D,X] = myKSVD(current_basis,data,max_iter,omp_iter)
 % OMP iter is T0
 
 num_basis = size(current_basis,2);   
@@ -42,7 +42,7 @@ for iter = 1:max_iter
 
 end
 
-final_basis = current_basis;
-sparse_repr = curr_sparse_repr;
+D = current_basis;
+X = curr_sparse_repr;
 
 end
