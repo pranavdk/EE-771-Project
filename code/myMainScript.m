@@ -1,22 +1,9 @@
-%% CS 754 Advanced Image Processing
-% Assignment 1 question 5 Submission Report
-%
-% This assignment has been done by:
-% 
-% * Udayan Joshi    150070018
-% * Pranav Kulkarni 15D070017
-% 
-
 %% Reading Video and taking time stamps
-%
-% 
-%
 
 % Ensure that folder containing mmread.m is in matlab path. Replace file
 % path with the path of your cars.avi file
 
-file_path = '/Users/udayanjoshi/Desktop/Abhyas/Sem6/Advanced Image Processing/CS754/Assignment1/A1-150070018-15D070017/Q5/data/cars.avi';
-%file_path = '/Users/Pranav/Desktop/SEMESTER 6/CS 754 AIP/cs754_code/Assignment1/A1-150070018-15D070017/Q5/data/cars.avi';
+file_path = '../data/cars.avi';
 
 % Uncomment the below line to read video.
 %video = mmread(file_path,[],[],false,true); %read all frames, disable audio
@@ -24,7 +11,6 @@ file_path = '/Users/udayanjoshi/Desktop/Abhyas/Sem6/Advanced Image Processing/CS
 %movie(video.frames)
 
 T_array = [3 5 7];
-
 
 for T = T_array
     
