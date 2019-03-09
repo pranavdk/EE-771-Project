@@ -6,7 +6,7 @@
 file_path = '../data/cars.avi';
 
 % Uncomment the below line to read video.
-%video = mmread(file_path,[],[],false,true); %read all frames, disable audio
+video = mmread(file_path,[],[],false,true); %read all frames, disable audio
 
 %movie(video.frames)
 
