@@ -9,24 +9,24 @@ close all;
 file_path = '../data/final.mp4';
 v = VideoReader(file_path);
 temporal_depth = 36;
-img_height = v.H;
-img_width = v.W;
-total_frames = floor(v.D*v.FR);
 subsampling_rate = 2;
+img_height = floor(v.H/subsampling_rate);
+img_width = floor(v.W/subsampling_rate);
+img_size = [img_height, img_width,];
+total_frames = floor(v.D*v.FR);
 sparsity = 40;
 patchsize = 8;
 stride = patchsize;
 N_videos = 20;
+bump_length = 3;
+n_basis_per_video_segment = 625;
 
-% img_height = v.H/subsampling_rate;
-% img_width = v.W/subsampling_rate;
-
+video_mat_path = '../data/Videos20.mat';
+dictionary_path = '../data/Dictionary12500.mat';
 %% Reading Video Segments and Data Preprocessing
 
-% file_path = '../data/final.mp4';
-% v = VideoReader(file_path);
 % C = randi([0,total_frames-temporal_depth],1,N_videos);
-% Data = zeros(N_videos,img_height/subsmapling_rate,img_width/subsmapling_rate,3,temporal_depth);
+% Data = zeros(N_videos,img_height,img_width,3,temporal_depth);
 % 
 % for i = 1:N_videos
 %     i
@@ -34,127 +34,60 @@ N_videos = 20;
 %     Data(i,:,:,:,:) = video_segment(1:subsampling_rate:end,1:subsampling_rate:end,:,:);    
 % end
 % 
-% save('../data/Videos20.mat','Data','-v7.3');
+% save(video_mat_path,'Data','-v7.3');
 
 %% Genrate Dictionary
 
+store = 0;
+colored = 0;  %change for colored
+Dictionary = generate_dictionary(video_mat_path,patchsize,stride,n_basis_per_video_segment,dictionary_path,sparsity,store,colored);
 
 %% Generate coded aperture images
 
+separated_videos_path = '../data/separated_videos20/';
+vfiles = dir (strcat(separated_videos_path,'/*.mat'));
 
+samp_mat_array = [];
+coded_image_array = [];
+video_segment_array = [];
+for file_index = 1:length(vfiles)
 
-%% 
+    file_path = strcat(separated_videos_path,vfiles(file_index).name);
+    video_segment = load(file_path);
+    video_segment = video_segment.array;
+    if (~colored)
+        video_segment = mean(video_segment,3);
+    end
+    [sampling_matrix, coded_image] = gen_sampling_matrix(video_segment, bump_length);
+    
+    samp_mat_array = [samp_mat_array sampling_matrix];
+    coded_image_array = [coded_image_array coded_image];
+    video_segment_array = [video_segment_array video_segment];
+end
 
+samp_mat_array_path = '../data/samp_mat_array.mat';
+coded_image_array_path = '../data/coded_image_array.mat';
 
+% save(samp_mat_array_path,'samp_mat_array','-v7.3');
+% save(coded_image_array_path,'coded_image_array','-v7.3');
 
 %% Patchwise Reconstruction
 
-dictionary_path = '../data/Dictionary12500.mat';
-Dictionary = load(dictionary_path);
-Dictionary = Dictionary.Dictionary;
-    
-coded_images_path = '../data/bp2/';
-files = dir (strcat(coded_images_path,'/*.mat'));
+% uncomment if want to load saved dictionary
+% Dictionary_obj = load(dictionary_path);
+% Dictionary = Dictionary_obj.Dictionary;
 
-for file_indedx = 1:length(files)
-    
-    output = double(zeros(img_height,img_width,temporal_depth));
-    count = double(zeros(img_height,img_width,temporal_depth));
+% uncomment if want to load coded images and sampling matrices
+% samp_mat_obj = load(samp_mat_array_path);
+% samp_mat_array = samp_mat_obj.samp_mat_array;
+% coded_image_obj = load(coded_image_array_path);
+% coded_image_array = coded_image_obj.samp_mat_array;
 
-    file_path = strcat(coded_images_path,files(file_indedx).name);
-    coded_frame = load(file_path);
-    coded_frame = mean(coded_frame.coded(1:subsampling_rate:end,1:subsampling_rate:end,:),3);   %grey
-%     coded_frame = mean(coded_frame.coded,3);
-    
-%     Video_Data = ;
+reconstructed = [];
+rmse = [];
+for vindex = 1:length(coded_image_array,1)
 
-    for i = 1:stride:m
-        for j = 1:stride:n
-            
-            % change these two lines
-            temp = Video_Data(file_indedx,i:i+patchsize-1,j:j+patchsize-1,:,:);
-            temp_size = size(temp);
-            
-            patch = coded_frame(i:i+patchsize-1,j:j+patchsize-1);
-            patch_sensing_matrix = C(i:i+patchsize-1,j:j+patchsize-1,:); %% Yet to change
-            
-            theta = omp(Dictionary,patch(:),[],sparsity);
-            f = Dictionary * theta;
-            f = reshape(f,[patchsize,patchsize,1,temporal_depth]);  %1 for grey
-            output(i:i+patchsize-1,j:j+patchsize-1,:) = output(i:i+patchsize-1,j:j+patchsize-1,:) + f;
-            count(i:i+patchsize-1,j:j+patchsize-1,:) = count(i:i+patchsize-1,j:j+patchsize-1,:) + 1.0;  
-            
-        end 
-    end
-    
-    reconstructed = imdivide(output,count);
-
-end
-
-% finding RMSE
-MSE = sum(sum(sum((output - crop_frames).^2)))/(H*W*T);
-X_bar = sum(sum(sum(crop_frames.^2)))/(H*W*T);
-
-sprintf('The Relative MSE for reconstruction is %f' ,MSE / X_bar)
-
-
-
-
-    %% Patchwise Reconstruction
-
-    p = 8;
-    iter = 40;
-    D1 = dctmtx(p);
-    D3 = dctmtx(T);
-    output = double(zeros(H,W,T));
-    output_2d = double(zeros(H,W,T));
-    count = double(zeros(H,W,T));
-    Psi_2d = kron(D1',D1');
-    Psi = kron(D3',Psi_2d);
-    s = p*p;
-    for i = 1 : H - p + 1
-        for j = 1 : W - p +1
-            patch = coded_frame(i:i+p-1,j:j+p-1);
-            patch_sensing_matrix = C(i:i+p-1,j:j+p-1,:);
-            Phi =zeros(s,s*T);
-            A_2d = zeros(s,s*T);
-            for k = 1 : T
-                temp = patch_sensing_matrix(:,:,k);
-                Phi(:,(k-1)*s+1:k*s) = diag(temp(:)); 
-                A_2d(:,(k-1)*s+1:k*s) = diag(temp(:)) * Psi_2d;
-            end
-            A = Phi * Psi;
-            theta = myOMP(patch(:),A,iter);
-            theta_2d = myOMP(patch(:),A_2d,iter);
-            f_2d = reshape(theta_2d,[p,p,T]);
-            for k = 1:T
-               temp = f_2d(:,:,k);
-               temp1 = Psi_2d * temp(:);
-               f_2d(:,:,k) = reshape(temp1,[p,p]);
-            end
-            f = Psi * theta;
-            f = reshape(f,[p,p,T]);
-            output(i:i+p-1,j:j+p-1,:) = output(i:i+p-1,j:j+p-1,:) + f;
-            output_2d(i:i+p-1,j:j+p-1,:) = output_2d(i:i+p-1,j:j+p-1,:) + f_2d;
-            count(i:i+p-1,j:j+p-1,:) = count(i:i+p-1,j:j+p-1,:) + 1.0;        
-        end
-    end
-
-    output = imdivide(output,count);
-    output_2d = imdivide(output_2d,count);
-    for i = 1:T
-       figure('Name',strcat('Reconstructed Image using 3d DCT: frame no. ',int2str(i)));
-       imshow(mat2gray(output(:,:,i)));
-    end
-    for i = 1:T
-       figure('Name',strcat('Reconstructed Image using 2d DCT: frame no. ',int2str(i)));
-       imshow(mat2gray(output(:,:,i)));
-    end
-    
-    % finding MSE
-    MSE = sum(sum(sum((output - crop_frames).^2)))/(H*W*T);
-    X_bar = sum(sum(sum(crop_frames.^2)))/(H*W*T);
-    sprintf('The Relative MSE for reconstruction using 3d DCT for T = %d is %f',T,MSE / X_bar)
-    MSE = sum(sum(sum((output_2d - crop_frames).^2)))/(H*W*T);
-    sprintf('The Relative MSE for reconstruction using 2d DCT for T = %d is %f',T,MSE / X_bar)
+    reconstructed = [reconstructed reconstruct(coded_image_array(vindex),samp_mat_array(vindex))];
+    rmse = [rmse sum((reconstructed - video_segment_array(vindex)).^2,'all')/sum(video_segment_array(vindex).^2,'all');];
+    sprintf('The Relative MSE for reconstruction of %d th video is %f', vindex ,rmse);
 end

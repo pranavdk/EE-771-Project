@@ -16,19 +16,6 @@ img_width = v.W;
 total_frames = floor(v.D*v.FR);
 subsampling_rate = 2;
 sparsity = 40;
-%% Reading Video Segments and Data Preprocessing
-
-% C = randi([0,total_frames-temporal_depth],1,N_videos);
-% 
-% Data = zeros(N_videos,img_height/subsmapling_rate,img_width/subsmapling_rate,3,temporal_depth);
-% 
-% for i = 1:N_videos
-%     i
-%     video_segment = read(v,[C(i),C(i)+temporal_depth-1]);
-%     Data(i,:,:,:,:) = video_segment(1:subsampling_rate:end,1:subsampling_rate:end,:,:);    
-% end
-% 
-% save('../data/Videos20.mat','Data','-v7.3');
 
 %%
 
