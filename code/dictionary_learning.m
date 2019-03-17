@@ -14,8 +14,8 @@ temporal_depth = 36;
 img_height = v.H;
 img_width = v.W;
 total_frames = floor(v.D*v.FR);
-subsmapling_rate = 2;
-
+subsampling_rate = 2;
+sparsity = 40;
 %% Reading Video Segments and Data Preprocessing
 
 % C = randi([0,total_frames-temporal_depth],1,N_videos);
@@ -25,7 +25,7 @@ subsmapling_rate = 2;
 % for i = 1:N_videos
 %     i
 %     video_segment = read(v,[C(i),C(i)+temporal_depth-1]);
-%     Data(i,:,:,:,:) = video_segment(1:subsmapling_rate:end,1:subsmapling_rate:end,:,:);    
+%     Data(i,:,:,:,:) = video_segment(1:subsampling_rate:end,1:subsampling_rate:end,:,:);    
 % end
 % 
 % save('../data/Videos20.mat','Data','-v7.3');
@@ -40,7 +40,7 @@ patchsize = 8;
 stride = patchsize;
 num_patches = ((m-patchsize)/stride+1)*((n-patchsize)/stride+1);
 
-Video_Data = mean(Video_Data,4); % remove for colored images
+Video_Data = mean(Video_Data,4); % grey
 
 Dictionary = [];
 for vid_seg_index= 1:size(Video_Data,1)
@@ -73,9 +73,12 @@ for vid_seg_index= 1:size(Video_Data,1)
     end
 
     params.data = data_array';
-    params.Tdata = 40;
+    params.Tdata = sparsity;
     params.dictsize = 625;
     [final_basis,sparse_repr] = ksvd(params,'i');
     
     Dictionary = [Dictionary, final_basis];
 end
+
+save('../data/Dictionary12500.mat','Dictionary','-v7.3');
+
