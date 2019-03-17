@@ -77,8 +77,8 @@ coded_image_array_path = '../data/coded_image_array.mat';
 %% Patchwise Reconstruction
 
 % uncomment if want to load saved dictionary
-% Dictionary_obj = load(dictionary_path);
-% Dictionary = Dictionary_obj.Dictionary;
+Dictionary_obj = load(dictionary_path);
+Dictionary = Dictionary_obj.Dictionary;
 
 % uncomment if want to load coded images and sampling matrices
 % samp_mat_obj = load(samp_mat_array_path);
@@ -89,9 +89,9 @@ coded_image_array_path = '../data/coded_image_array.mat';
 reconstructed = cell(1,length(vfiles));
 rmse = cell(1,length(vfiles));
 for vindex = 1:length(coded_image_list)
-
-    reconstructed{vindex} = reconstruct(Dictionary,coded_image_list{vindex},samp_mat_list{vindex},temporal_depth,patchsize,stride);
-    rmse{vindex} = sum((reconstructed - video_segment_list{vindex}).^2,'all')/sum(video_segment_list{vindex}.^2,'all');
+    vindex
+    reconstructed{vindex} = reconstruct(Dictionary,coded_image_list{vindex},samp_mat_list{vindex},temporal_depth,patchsize,stride,sparsity);
+    rmse{vindex} = sum((reconstructed{vindex} - video_segment_list{vindex}).^2,'all')/sum(video_segment_list{vindex}.^2,'all');
     sprintf('The Relative MSE for reconstruction of %d th video is %f', vindex ,rmse{vindex});
 end
 
