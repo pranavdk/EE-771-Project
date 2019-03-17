@@ -1,47 +1,104 @@
-%%
+%% EE 771 Project : Reducing Spatio-temporal tradeoff
+
 clear;
 clc;
 close all;
-%% Reading Video and taking time stamps
-file_path = '../data/cars.mp4';
 
-% Uncomment the below line to read video.
-% video = mmread(file_path,[],[],false,true); %read all frames, disable audio
+%% Global Variables
+
+file_path = '../data/final.mp4';
 v = VideoReader(file_path);
+temporal_depth = 36;
+img_height = v.H;
+img_width = v.W;
+total_frames = floor(v.D*v.FR);
+subsampling_rate = 2;
+sparsity = 40;
+patchsize = 8;
+stride = patchsize;
+N_videos = 20;
 
-video = read(v,[1 10]);
+% img_height = v.H/subsampling_rate;
+% img_width = v.W/subsampling_rate;
 
-%%
-%movie(video.frames)
+%% Reading Video Segments and Data Preprocessing
 
-% T_array = [3 5 7];
-T_array = [3];
+% file_path = '../data/final.mp4';
+% v = VideoReader(file_path);
+% C = randi([0,total_frames-temporal_depth],1,N_videos);
+% Data = zeros(N_videos,img_height/subsmapling_rate,img_width/subsmapling_rate,3,temporal_depth);
+% 
+% for i = 1:N_videos
+%     i
+%     video_segment = read(v,[C(i),C(i)+temporal_depth-1]);
+%     Data(i,:,:,:,:) = video_segment(1:subsampling_rate:end,1:subsampling_rate:end,:,:);    
+% end
+% 
+% save('../data/Videos20.mat','Data','-v7.3');
 
-for T = T_array
+%% Genrate Dictionary
+
+
+%% Generate coded aperture images
+
+
+
+%% 
+
+
+
+%% Patchwise Reconstruction
+
+dictionary_path = '../data/Dictionary12500.mat';
+Dictionary = load(dictionary_path);
+Dictionary = Dictionary.Dictionary;
     
-    frames = squeeze(mean((video(:,:,:,1:T)),3));
-%     frames = zeros(288,360,T);
-%     for i = 1 : T
-%        frames(:,:,i) = rgb2gray(frames_struct(i).cdata);
-%     end
-    X_base = 150;
-    Y_base = 100;
-    height = 120;
-    width =  240;
-    crop_frames = frames(X_base+1:X_base + height,Y_base+1 : Y_base + width,:);
+coded_images_path = '../data/bp2/';
+files = dir (strcat(coded_images_path,'/*.mat'));
 
-    for i = 1:T
-        figure('Name',strcat('Original Image: frame no. ',int2str(i)));
-        imshow(mat2gray(crop_frames(:,:,i)));
-    end 
-    %% Creating a random code pattern and calculating coded screenshot.
+for file_indedx = 1:length(files)
+    
+    output = double(zeros(img_height,img_width,temporal_depth));
+    count = double(zeros(img_height,img_width,temporal_depth));
 
-    [H, W, ~] = size(crop_frames);
-    C = randi([0,1],H,W,T);
-    prod = crop_frames .* C + normrnd(0,2,[H,W]);
-    coded_frame = double(sum(prod,3));
-    figure;
-    imshow(mat2gray(coded_frame))
+    file_path = strcat(coded_images_path,files(file_indedx).name);
+    coded_frame = load(file_path);
+    coded_frame = mean(coded_frame.coded(1:subsampling_rate:end,1:subsampling_rate:end,:),3);   %grey
+%     coded_frame = mean(coded_frame.coded,3);
+    
+%     Video_Data = ;
+
+    for i = 1:stride:m
+        for j = 1:stride:n
+            
+            % change these two lines
+            temp = Video_Data(file_indedx,i:i+patchsize-1,j:j+patchsize-1,:,:);
+            temp_size = size(temp);
+            
+            patch = coded_frame(i:i+patchsize-1,j:j+patchsize-1);
+            patch_sensing_matrix = C(i:i+patchsize-1,j:j+patchsize-1,:); %% Yet to change
+            
+            theta = omp(Dictionary,patch(:),[],sparsity);
+            f = Dictionary * theta;
+            f = reshape(f,[patchsize,patchsize,1,temporal_depth]);  %1 for grey
+            output(i:i+patchsize-1,j:j+patchsize-1,:) = output(i:i+patchsize-1,j:j+patchsize-1,:) + f;
+            count(i:i+patchsize-1,j:j+patchsize-1,:) = count(i:i+patchsize-1,j:j+patchsize-1,:) + 1.0;  
+            
+        end 
+    end
+    
+    reconstructed = imdivide(output,count);
+
+end
+
+% finding RMSE
+MSE = sum(sum(sum((output - crop_frames).^2)))/(H*W*T);
+X_bar = sum(sum(sum(crop_frames.^2)))/(H*W*T);
+
+sprintf('The Relative MSE for reconstruction is %f' ,MSE / X_bar)
+
+
+
 
     %% Patchwise Reconstruction
 
