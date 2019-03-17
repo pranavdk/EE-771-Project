@@ -23,6 +23,10 @@ n_basis_per_video_segment = 625;
 
 video_mat_path = '../data/Videos20.mat';
 dictionary_path = '../data/Dictionary12500.mat';
+
+store = 0;    % change to store generated dictionare, coded images etc
+colored = 0;  % change for colored images
+
 %% Reading Video Segments and Data Preprocessing
 
 % C = randi([0,total_frames-temporal_depth],1,N_videos);
@@ -38,8 +42,6 @@ dictionary_path = '../data/Dictionary12500.mat';
 
 %% Genrate Dictionary
 
-store = 0;
-colored = 0;  %change for colored
 Dictionary = generate_dictionary(video_mat_path,patchsize,stride,n_basis_per_video_segment,dictionary_path,sparsity,store,colored);
 
 %% Generate coded aperture images
@@ -47,22 +49,23 @@ Dictionary = generate_dictionary(video_mat_path,patchsize,stride,n_basis_per_vid
 separated_videos_path = '../data/separated_videos20/';
 vfiles = dir (strcat(separated_videos_path,'/*.mat'));
 
-samp_mat_array = [];
-coded_image_array = [];
-video_segment_array = [];
-for file_index = 1:length(vfiles)
+samp_mat_list = cell(1,length(vfiles));
+coded_image_list = cell(1,length(vfiles));
+video_segment_list = cell(1,length(vfiles));
 
+for file_index = 1:length(vfiles)
+    file_index
     file_path = strcat(separated_videos_path,vfiles(file_index).name);
     video_segment = load(file_path);
     video_segment = video_segment.array;
     if (~colored)
         video_segment = mean(video_segment,3);
     end
-    [sampling_matrix, coded_image] = gen_sampling_matrix(video_segment, bump_length);
+    [coded_image, sampling_matrix] = gen_coded_img(video_segment, bump_length);
     
-    samp_mat_array = [samp_mat_array sampling_matrix];
-    coded_image_array = [coded_image_array coded_image];
-    video_segment_array = [video_segment_array video_segment];
+    samp_mat_list{file_index} = sampling_matrix;
+    coded_image_list{file_index} = coded_image;
+    video_segment_list{file_index} = video_segment;
 end
 
 samp_mat_array_path = '../data/samp_mat_array.mat';
@@ -83,11 +86,12 @@ coded_image_array_path = '../data/coded_image_array.mat';
 % coded_image_obj = load(coded_image_array_path);
 % coded_image_array = coded_image_obj.samp_mat_array;
 
-reconstructed = [];
-rmse = [];
-for vindex = 1:length(coded_image_array,1)
+reconstructed = cell(1,length(vfiles));
+rmse = cell(1,length(vfiles));
+for vindex = 1:length(coded_image_list)
 
-    reconstructed = [reconstructed reconstruct(coded_image_array(vindex),samp_mat_array(vindex))];
-    rmse = [rmse sum((reconstructed - video_segment_array(vindex)).^2,'all')/sum(video_segment_array(vindex).^2,'all');];
-    sprintf('The Relative MSE for reconstruction of %d th video is %f', vindex ,rmse);
+    reconstructed{vindex} = reconstruct(Dictionary,coded_image_list{vindex},samp_mat_list{vindex},temporal_depth,patchsize,stride);
+    rmse{vindex} = sum((reconstructed - video_segment_list{vindex}).^2,'all')/sum(video_segment_list{vindex}.^2,'all');
+    sprintf('The Relative MSE for reconstruction of %d th video is %f', vindex ,rmse{vindex});
 end
+

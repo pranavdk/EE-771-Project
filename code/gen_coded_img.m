@@ -3,7 +3,7 @@ function [coded_img,sampling_matrix] = gen_coded_img(video, bump_length)
     vsize = size(video);
     timemap = randi([1 vsize(4)], [vsize(1) vsize(2)]);
     sampling_matrix = zeros(vsize);
-    
+    temporal_depth = vsize(4);
     for i=1:vsize(1)
         for j = 1:vsize(2)
             sampling_matrix(i,j,:,mod(timemap(i,j)-1+(0:bump_length-1), temporal_depth) + 1) = 1;
