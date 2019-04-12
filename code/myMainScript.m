@@ -4,7 +4,7 @@ clear;
 clc;
 close all;
 
-%% Global Variables
+%% Global Variables / Parameters/ Jyperparameters
 
 file_path = '../data/final.mp4';
 v = VideoReader(file_path);
@@ -15,6 +15,7 @@ img_width = floor(v.W/subsampling_rate);
 img_size = [img_height, img_width,];
 total_frames = floor(v.D*v.FR);
 sparsity = 40;
+epsilon = 1e-6;
 patchsize = 8;
 stride = patchsize;
 N_videos = 20;
@@ -23,8 +24,13 @@ n_basis_per_video_segment = 625;
 
 video_mat_path = '../data/Videos20.mat';
 dictionary_path = '../data/Dictionary12500.mat';
+samp_mat_list_path = '../data/samp_mat_list.mat';
+coded_image_list_path = '../data/coded_image_list.mat';
+separated_videos_path = '../data/separated_videos20/';
+video_segments_list_path = '../data/video_segments_list.mat';
+vfiles = dir (strcat(separated_videos_path,'/*.mat'));
 
-store = 0;    % change to store generated dictionare, coded images etc
+store = 0;    % change to store generated dictionary, coded images etc
 colored = 0;  % change for colored images
 
 %% Reading Video Segments and Data Preprocessing
@@ -46,15 +52,11 @@ Dictionary = generate_dictionary(video_mat_path,patchsize,stride,n_basis_per_vid
 
 %% Generate coded aperture images
 
-separated_videos_path = '../data/separated_videos20/';
-vfiles = dir (strcat(separated_videos_path,'/*.mat'));
-
 samp_mat_list = cell(1,length(vfiles));
 coded_image_list = cell(1,length(vfiles));
 video_segment_list = cell(1,length(vfiles));
 
 for file_index = 1:length(vfiles)
-    file_index
     file_path = strcat(separated_videos_path,vfiles(file_index).name);
     video_segment = load(file_path);
     video_segment = video_segment.array;
@@ -68,11 +70,9 @@ for file_index = 1:length(vfiles)
     video_segment_list{file_index} = video_segment;
 end
 
-samp_mat_array_path = '../data/samp_mat_array.mat';
-coded_image_array_path = '../data/coded_image_array.mat';
-
-% save(samp_mat_array_path,'samp_mat_array','-v7.3');
-% save(coded_image_array_path,'coded_image_array','-v7.3');
+save(samp_mat_list_path,'samp_mat_list','-v7.3');
+save(coded_image_list_path,'coded_image_list','-v7.3');
+save(video_segments_list_path,'video_segment_list','-v7.3');
 
 %% Patchwise Reconstruction
 
@@ -81,10 +81,13 @@ Dictionary_obj = load(dictionary_path);
 Dictionary = Dictionary_obj.Dictionary;
 
 % uncomment if want to load coded images and sampling matrices
-% samp_mat_obj = load(samp_mat_array_path);
-% samp_mat_array = samp_mat_obj.samp_mat_array;
-% coded_image_obj = load(coded_image_array_path);
-% coded_image_array = coded_image_obj.samp_mat_array;
+samp_mat_obj = load(samp_mat_list_path);
+samp_mat_list = samp_mat_obj.samp_mat_list;
+coded_image_obj = load(coded_image_list_path);
+coded_image_list = coded_image_obj.coded_image_list;
+video_segments_list_obj = load(video_segments_list_path);
+video_segment_list = video_segments_list_obj.video_segment_list;
+
 
 reconstructed = cell(1,length(vfiles));
 rmse = cell(1,length(vfiles));
@@ -95,3 +98,17 @@ for vindex = 1:length(coded_image_list)
     sprintf('The Relative MSE for reconstruction of %d th video is %f', vindex ,rmse{vindex});
 end
 
+%%
+
+vd  = video_segment_list{1};
+imshow(vd(:,:,1,18)/max(vd(:,:,1,18),[],'all'))
+hold on
+stepSize = 8;
+rows = 360;
+% columns = 640;
+% for row = 1 : stepSize : rows
+%     line([1, columns], [row, row], 'Color', 'r', 'LineWidth', 1);
+% end
+% for col = 1 : stepSize : columns
+%     line([col, col], [1, rows], 'Color', 'r', 'LineWidth', 1);
+% end
