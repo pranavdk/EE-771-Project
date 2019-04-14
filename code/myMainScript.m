@@ -4,7 +4,7 @@ clear;
 clc;
 close all;
 
-%% Global Variables / Parameters/ Jyperparameters
+%% Global Variables / Parameters/ Hyperparameters
 
 file_path = '../data/final.mp4';
 v = VideoReader(file_path);
@@ -35,20 +35,26 @@ colored = 0;  % change for colored images
 
 %% Reading Video Segments and Data Preprocessing
 
-% C = randi([0,total_frames-temporal_depth],1,N_videos);
-% Data = zeros(N_videos,img_height,img_width,3,temporal_depth);
-% 
-% for i = 1:N_videos
-%     i
-%     video_segment = read(v,[C(i),C(i)+temporal_depth-1]);
-%     Data(i,:,:,:,:) = video_segment(1:subsampling_rate:end,1:subsampling_rate:end,:,:);    
-% end
-% 
-% save(video_mat_path,'Data','-v7.3');
+C = randi([0,total_frames-temporal_depth],1,N_videos);
+Data = zeros(N_videos,img_height,img_width,3,temporal_depth);
 
-%% Genrate Dictionary
+for i = 1:N_videos
+    i
+    video_segment = read(v,[C(i),C(i)+temporal_depth-1]);
+    Data(i,:,:,:,:) = double(video_segment(1:subsampling_rate:end,...
+        1:subsampling_rate:end,:,:))/255;
+    array = double(video_segment(1:subsampling_rate:end,...
+        1:subsampling_rate:end,:,:))/255;
+    separated_filename = strcat(separated_videos_path, num2str(i), '.mat');
+    save(separated_filename, 'array', '-v7.3');
+end
 
-Dictionary = generate_dictionary(video_mat_path,patchsize,stride,n_basis_per_video_segment,dictionary_path,sparsity,store,colored);
+save(video_mat_path,'Data','-v7.3');
+
+%% Generate Dictionary
+
+Dictionary = generate_dictionary(video_mat_path,patchsize,stride,...
+    n_basis_per_video_segment,dictionary_path,sparsity,store,colored);
 
 %% Generate coded aperture images
 
@@ -93,22 +99,10 @@ reconstructed = cell(1,length(vfiles));
 rmse = cell(1,length(vfiles));
 for vindex = 1:length(coded_image_list)
     vindex
-    reconstructed{vindex} = reconstruct(Dictionary,coded_image_list{vindex},samp_mat_list{vindex},temporal_depth,patchsize,stride,sparsity);
-    rmse{vindex} = sum((reconstructed{vindex} - video_segment_list{vindex}).^2,'all')/sum(video_segment_list{vindex}.^2,'all');
-    sprintf('The Relative MSE for reconstruction of %d th video is %f', vindex ,rmse{vindex});
+    reconstructed{vindex} = reconstruct(Dictionary,coded_image_list{vindex},...
+        samp_mat_list{vindex},temporal_depth,patchsize,stride,sparsity);
+    rmse{vindex} = sum((reconstructed{vindex} - video_segment_list{vindex})...
+        .^2,'all')/sum(video_segment_list{vindex}.^2,'all');
+    sprintf('The Relative MSE for reconstruction of %d th video is %f',...
+        vindex ,rmse{vindex});
 end
-
-%%
-
-vd  = video_segment_list{1};
-imshow(vd(:,:,1,18)/max(vd(:,:,1,18),[],'all'))
-hold on
-stepSize = 8;
-rows = 360;
-% columns = 640;
-% for row = 1 : stepSize : rows
-%     line([1, columns], [row, row], 'Color', 'r', 'LineWidth', 1);
-% end
-% for col = 1 : stepSize : columns
-%     line([col, col], [1, rows], 'Color', 'r', 'LineWidth', 1);
-% end

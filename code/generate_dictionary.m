@@ -52,8 +52,6 @@ for vid_seg_index= 1:n_videos
     params.Tdata = sparsity;
     params.dictsize = n_basis_per_video_segment;
     [final_basis,sparse_repr] = ksvd(params,'i');
-    size(final_basis)
-    size(Dictionary)
 
     Dictionary(:,(vid_seg_index-1)*n_basis_per_video_segment+1:...
         vid_seg_index*n_basis_per_video_segment) = final_basis;
