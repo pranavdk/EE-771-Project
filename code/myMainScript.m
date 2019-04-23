@@ -106,3 +106,40 @@ for vindex = 1:length(coded_image_list)
     sprintf('The Relative MSE for reconstruction of %d th video is %f',...
         vindex ,rmse{vindex});
 end
+
+
+%%
+
+
+for vindex = 1:length(coded_image_list)
+    vindex
+    
+    vd = reconstructed{vindex};
+    reconstructed{vindex} = reshape(vd,[360,640,1,36]).*(vd>0)/...
+        max(reconstructed{vindex},[],'all');
+    rmse{vindex} = sum((reconstructed{vindex} - video_segment_list{vindex})...
+        .^2,'all')/sum(video_segment_list{vindex}.^2,'all');
+    sprintf('The Relative MSE for reconstruction of %d th video is %f',...
+        vindex ,rmse{vindex});
+end
+
+
+%%
+
+vid = reconstructed{19}.*255+1;
+movie = immovie(uint8(vid), gray);
+implay(movie)
+
+%%
+val = zeros(length(reconstructed),1);
+for i = 1:length(reconstructed)
+    
+    val(i)=rmse{i};
+    
+end
+
+
+mean(val)
+std(val)
+
+

@@ -31,7 +31,8 @@ function [reconstructed] = reconstruct(Dictionary,coded_img,samp_mat,...
         end 
     end
     
-    reconstructed = imdivide(output,count);
+%     reconstructed = imdivide(output,count);   % Does this remove singleton dimensios?
+    reconstructed = output./count;
     
 end
 
