@@ -1,4 +1,4 @@
-function [coded_img,sampling_matrix] = gen_coded_img(video, bump_length)
+function [coded_img,sampling_matrix] = gen_coded_img(video, bump_length, sigma)
 
     vsize = size(video);
     timemap = randi([1 vsize(4)], [vsize(1) vsize(2)]);
@@ -17,7 +17,9 @@ function [coded_img,sampling_matrix] = gen_coded_img(video, bump_length)
     end
     
     coded_img = sampling_matrix.*video;
-    coded_img = squeeze(mean(coded_img, 4));
+    coded_img = coded_img + sigma*randn(size(coded_img));
+    coded_img = mean(coded_img, 4);
+    coded_img  = reshape(coded_img,vsize(1:3));
     
 end
 
